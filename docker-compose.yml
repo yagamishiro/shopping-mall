@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: shopping-mall
+      MYSQL_ROOT_PASSWORD: password
+      TZ: Asia/Tokyo
+    restart: unless-stopped
+    volumes: [db:/var/lib/mysql]
+    ports: [3306:3306]
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    profiles: [debug]
+
+  node:
+    image: node:lts-slim
+    environment:
+      NODE_ENV: developlment
+    command: sh -c "npm ci && npm run development"
+    profiles: [build]
+    volumes: [./:/home]
+    working_dir: /home
+
+  web:
+    build:
+      args:
+        PHP_MODE: development
+      context: ./docker
+    depends_on: [db]
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+      - ./docker/web/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    ports: [80:80]
+
+volumes:
+  db:
